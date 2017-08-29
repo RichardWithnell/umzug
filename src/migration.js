@@ -17,7 +17,7 @@ module.exports = class Migration {
   /**
    * Constructs Migration.
    *
-   * @param {String} path - Path of the migration file.
+   * @param {String|Object} migration - Path of the migration file or the object.
    * @param {Object} options
    * @param {String} options.upName - Name of the method `up` in migration
    * module.
@@ -28,9 +28,15 @@ module.exports = class Migration {
    * migration methods.
    * @constructs Migration
    */
-  constructor(path, options) {
-    this.path    = _path.resolve(path);
-    this.file    = _path.basename(this.path);
+  constructor(migration, options) {
+    if (typeof this.migration === 'string' || this.migration instanceof String) {
+      this.migration = migration
+      this.file = migration.name
+    } else {
+      this.migration = _path.resolve(migration);
+      this.file = _path.basename(this.migration);
+    }
+
     this.options = options;
   }
 
@@ -41,20 +47,24 @@ module.exports = class Migration {
    * @returns {Promise.<Object>} Required migration module
    */
   migration() {
-    if (this.path.match(/\.coffee$/)) {
-      // 1.7.x compiler registration
-      helper.resolve('coffee-script/register') ||
+    if (typeof this.migration === 'string' || this.migration instanceof String) {
+      if (this.migration.match(/\.coffee$/)) {
+        // 1.7.x compiler registration
+        helper.resolve('coffee-script/register') ||
 
-      // Prior to 1.7.x compiler registration
-      helper.resolve('coffee-script') ||
-      /* jshint expr: true */
-      (function () {
-        console.error('You have to add "coffee-script" to your package.json.');
-        process.exit(1);
-      })();
+        // Prior to 1.7.x compiler registration
+        helper.resolve('coffee-script') ||
+        /* jshint expr: true */
+        (function () {
+          console.error('You have to add "coffee-script" to your package.json.');
+          process.exit(1);
+        })();
+      }
+
+      return import(this.migration);
+    } else {
+      return this.migration
     }
-
-    return import(this.path);
   }
 
   /**

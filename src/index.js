@@ -28,7 +28,7 @@ module.exports = class Umzug extends EventEmitter {
    * in migrations.
    * @param {Object} [options.storageOptions] - The options for the storage.
    * Check the available storages for further details.
-   * @param {Object} [options.migrations] -
+   * @param {Object|Array} [options.migrations] -
    * @param {Array} [options.migrations.params] - The params that gets passed to
    * the migrations. Might be an array or a synchronous function which returns
    * an array.
@@ -56,13 +56,15 @@ module.exports = class Umzug extends EventEmitter {
       throw new Error('The logging-option should be either a function or false');
     }
 
-    this.options.migrations = {
-      params: [],
-      path: path.resolve(process.cwd(), 'migrations'),
-      pattern: /^\d+[\w-]+\.js$/,
-      wrap: fun => fun,
-      ...this.options.migrations,
-    };
+    if (!Array.isArray(this.options.migrations)) {
+      this.options.migrations = {
+        params: [],
+        path: path.resolve(process.cwd(), 'migrations'),
+        pattern: /^\d+[\w-]+\.js$/,
+        wrap: fun => fun,
+        ...this.options.migrations,
+      };
+    }
 
     this.storage = this._initStorage();
   }
@@ -434,33 +436,52 @@ module.exports = class Umzug extends EventEmitter {
    * @private
    */
   _findMigrations() {
-    return Bluebird
-      .promisify(fs.readdir)(this.options.migrations.path)
-      .bind(this)
-      .filter(function (file) {
-        if(!this.options.migrations.pattern.test(file)) {
-          this.log('File: ' + file + ' does not match pattern: ' + this.options.migrations.pattern);
-          return false;
-        }
-        return true;
-      })
-      .map(function (file) {
-        return path.resolve(this.options.migrations.path, file);
-      })
-      .map(function (path) {
-        return new Migration(path, this.options);
-      })
-      .then(function (migrations) {
-        return migrations.sort(function (a, b) {
-          if (a.file > b.file) {
-            return 1;
-          } else if (a.file < b.file) {
-            return -1;
-          } else {
-            return 0;
-          }
+    let migrations
+    if (Array.isArray(this.options.migrations)) {
+      return this.options.migrations
+        .map(function (migration) {
+          return new Migration(migration, this.options);
+        })
+        .then(function (migrations) {
+          return migrations.sort(function (a, b) {
+            if (a.file > b.file) {
+              return 1;
+            } else if (a.file < b.file) {
+              return -1;
+            } else {
+              return 0;
+            }
+          });
         });
-      });
+    } else {
+      return Bluebird
+        .promisify(fs.readdir)(this.options.migrations.path)
+        .bind(this)
+        .filter(function (file) {
+          if(!this.options.migrations.pattern.test(file)) {
+            this.log('File: ' + file + ' does not match pattern: ' + this.options.migrations.pattern);
+            return false;
+          }
+          return true;
+        })
+        .map(function (file) {
+          return path.resolve(this.options.migrations.path, file);
+        })
+        .map(function (path) {
+          return new Migration(path, this.options);
+        })
+        .then(function (migrations) {
+          return migrations.sort(function (a, b) {
+            if (a.file > b.file) {
+              return 1;
+            } else if (a.file < b.file) {
+              return -1;
+            } else {
+              return 0;
+            }
+          });
+        });
+    }
   }
 
   /**
