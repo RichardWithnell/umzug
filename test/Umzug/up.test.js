@@ -315,7 +315,7 @@ describe('upProgrammatic', function () {
       .then((migrationNames) => {
         this.migrationNames = migrationNames;
 
-        let deps = fs.readdirSync(__dirname + '/../tmp/')
+        let modules = fs.readdirSync(__dirname + '/../tmp/')
           .filter(function (mig) {
             return (mig.indexOf('.js') >= 0)
           })
@@ -324,7 +324,9 @@ describe('upProgrammatic', function () {
           })
 
         this.umzug          = new Umzug({
-          migrations:     deps,
+          migrations:     {
+            modules: modules
+          },
           storageOptions: { path: __dirname + '/../tmp/umzug.json' }
         });
       });

@@ -56,15 +56,13 @@ module.exports = class Umzug extends EventEmitter {
       throw new Error('The logging-option should be either a function or false');
     }
 
-    if (!Array.isArray(this.options.migrations)) {
-      this.options.migrations = {
-        params: [],
-        path: path.resolve(process.cwd(), 'migrations'),
-        pattern: /^\d+[\w-]+\.js$/,
-        wrap: fun => fun,
-        ...this.options.migrations,
-      };
-    }
+    this.options.migrations = {
+      params: [],
+      path: path.resolve(process.cwd(), 'migrations'),
+      pattern: /^\d+[\w-]+\.js$/,
+      wrap: fun => fun,
+      ...this.options.migrations,
+    };
 
     this.storage = this._initStorage();
   }
@@ -436,9 +434,9 @@ module.exports = class Umzug extends EventEmitter {
    * @private
    */
   _findMigrations() {
-    if (Array.isArray(this.options.migrations)) {
+    if (this.options.migrations.modules) {
       let options = this.options
-      return Bluebird.resolve(this.options.migrations
+      return Bluebird.resolve(this.options.migrations.modules
         .map(function (migration) {
           return new Migration(migration, options);
         })

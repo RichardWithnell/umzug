@@ -110,11 +110,7 @@ module.exports = class Migration {
     }
     // TODO throw new Error(...)
     if (!fun) throw 'Could not find migration method: ' + method;
-
-    let wrap = fun => fun
-    wrap = this.options.migrations.wrap || wrap
-
-    const wrappedFun = wrap(fun);
+    const wrappedFun = this.options.migrations.wrap(fun);
 
     return await wrappedFun.apply(migration, args);
   }

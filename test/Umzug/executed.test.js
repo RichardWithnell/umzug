@@ -122,7 +122,9 @@ describe('executedProgrammatic', function () {
           })
 
         this.umzug          = new Umzug({
-          migrations:     deps,
+          migrations:     {
+            modules: modules
+          },
           storageOptions: { path: __dirname + '/../tmp/umzug.json' }
         });
       });
