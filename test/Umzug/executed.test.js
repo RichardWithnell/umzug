@@ -113,7 +113,7 @@ describe('executedProgrammatic', function () {
       .then((migrationNames) => {
         this.migrationNames = migrationNames;
 
-        let deps = fs.readdirSync(__dirname + '/../tmp/')
+        let modules = fs.readdirSync(__dirname + '/../tmp/')
           .filter(function (mig) {
             return (mig.indexOf('.js') >= 0)
           })
