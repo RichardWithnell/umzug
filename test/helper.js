@@ -20,6 +20,7 @@ var helper = module.exports = {
         '\'use strict\';',
         '',
         'module.exports = {',
+        '  name: \'' + name + '\' ,',
         '  up: function () {},',
         '  down: function () {}',
         '};'
