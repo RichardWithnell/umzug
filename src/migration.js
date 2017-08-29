@@ -17,7 +17,7 @@ module.exports = class Migration {
   /**
    * Constructs Migration.
    *
-   * @param {String|Object} migration - Path of the migration file or the object.
+   * @param {String|Object} path - Path of the migration file or the object.
    * @param {Object} options
    * @param {String} options.upName - Name of the method `up` in migration
    * module.
@@ -28,13 +28,13 @@ module.exports = class Migration {
    * migration methods.
    * @constructs Migration
    */
-  constructor(migration, options) {
-    if (typeof this.migration === 'string' || this.migration instanceof String) {
-      this.migration = migration
-      this.file = migration.name
+  constructor(path, options) {
+    if (typeof path === 'string' || path instanceof String) {
+      this.path = _path.resolve(path);
+      this.file = _path.basename(this.path);
     } else {
-      this.migration = _path.resolve(migration);
-      this.file = _path.basename(this.migration);
+      this.path = path
+      this.file = path.name + '.js'
     }
 
     this.options = options;
@@ -47,8 +47,8 @@ module.exports = class Migration {
    * @returns {Promise.<Object>} Required migration module
    */
   migration() {
-    if (typeof this.migration === 'string' || this.migration instanceof String) {
-      if (this.migration.match(/\.coffee$/)) {
+    if (typeof this.path === 'string' || this.path instanceof String) {
+      if (this.path.match(/\.coffee$/)) {
         // 1.7.x compiler registration
         helper.resolve('coffee-script/register') ||
 
@@ -61,9 +61,9 @@ module.exports = class Migration {
         })();
       }
 
-      return import(this.migration);
+      return import(this.path);
     } else {
-      return this.migration
+      return Promise.resolve(this.path)
     }
   }
 
@@ -110,7 +110,11 @@ module.exports = class Migration {
     }
     // TODO throw new Error(...)
     if (!fun) throw 'Could not find migration method: ' + method;
-    const wrappedFun = this.options.migrations.wrap(fun);
+
+    let wrap = fun => fun
+    wrap = this.options.migrations.wrap || wrap
+
+    const wrappedFun = wrap(fun);
 
     return await wrappedFun.apply(migration, args);
   }

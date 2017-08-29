@@ -436,23 +436,22 @@ module.exports = class Umzug extends EventEmitter {
    * @private
    */
   _findMigrations() {
-    let migrations
     if (Array.isArray(this.options.migrations)) {
-      return this.options.migrations
+      let options = this.options
+      return Bluebird.resolve(this.options.migrations
         .map(function (migration) {
-          return new Migration(migration, this.options);
+          return new Migration(migration, options);
         })
-        .then(function (migrations) {
-          return migrations.sort(function (a, b) {
-            if (a.file > b.file) {
-              return 1;
-            } else if (a.file < b.file) {
-              return -1;
-            } else {
-              return 0;
-            }
-          });
-        });
+        .sort(function (a, b) {
+          if (a.file > b.file) {
+            return 1;
+          } else if (a.file < b.file) {
+            return -1;
+          } else {
+            return 0;
+          }
+        })
+      );
     } else {
       return Bluebird
         .promisify(fs.readdir)(this.options.migrations.path)
